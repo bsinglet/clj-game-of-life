@@ -7,29 +7,29 @@
   (get-in game-state [y x]))
 
 (defn get-neighbors
+    "Get the eight neighbors of the specified cell as a list of coordinate
+    pairs (list of lists)."
+    [game-state x y]
+    (list '((- x 1) (- y 1))
+    '(x (- y 1))
+    '((+ x 1) (- y 1))
+    '((- x 1) y)
+    '(x (+ y 1))
+    '((- x 1) (+ y 1))
+    '(x (+ y 1))
+    '((+ x 1) (+ y 1))))
+
+(defn get-neighbors-values
   "Get the eight neighbors of the specified cell."
   [game-state x y]
-  [(get-cell game-state (- x 1) (- y 1))
-  (get-cell game-state x (- y 1))
-  (get-cell game-state (+ x 1) (- y 1))
-  (get-cell game-state (- x 1) y)
-  (get-cell game-state x (+ y 1))
-  (get-cell game-state (- x 1) (+ y 1))
-  (get-cell game-state x (+ y 1))
-  (get-cell game-state (+ x 1) (+ y 1))
-  ])
+  (map #(apply get-cell %) (get-neighbors game-state x y)))
 
 (defn get-count-living-neighbors
   "Calls get-neighbors to get a sequence of neighbors, returns the
   number of them that are alive."
   [game-state x y]
-  (loop [remaining (get-neighbors game-state x y) total 0]
-    (if (empty? remaining)
-      total
-      (recur (rest remaining)
-        (if (first remaining)
-          (inc total)
-          total)))))
+  (reduce + (map #(if (true? %) 1 0)
+    (get-neighbors-values game-state x y))))
 
 (defn get-list-live-cells
   "Given the game state, return a list of coordinate pairs of living cells. For
@@ -43,11 +43,53 @@
           (let [my-key (first remaining-keys)]
             (map #(list % my-key) (keys (get game-state my-key)))))))))
 
+(defn get-list-potentially-pregnant-cells
+  "Gets the list of currently-dead cells that are adjacent to currently-living
+  cells. These are the ones that may come alive in the next iteration."
+  [game-state living-cells]
+  (filter #(false? (apply get-cell %))
+    (set (map #(get-neighbors game-state (first %) (second %)) living-cells))))
+
+(defn determine-next-game-state-living
+  "Given the current game state, a list of living cells, and a working version
+  of the next game state, compute the next values for those positions."
+  [old-game-state living-cells next-game-state]
+  (loop [remaining living-cells nexter-game-state next-game-state]
+    (if (empty? remaining)
+      nexter-game-state
+      (recur (rest remaining)
+        (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
+          (let [num-living-neighbors (get-list-live-cells old-game-state (first (first remaining)) (second (first remaining)))]
+            (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
+                true
+                false)))))))
+
+(defn determine-next-game-state-dead
+  "Given the current game state, a list of dead cells, and a working version
+  of the next game state, compute the next values for those positions."
+  [old-game-state dead-cells next-game-state]
+  (loop [remaining dead-cells nexter-game-state next-game-state]
+    (if (empty? remaining)
+      nexter-game-state
+      (recur (rest remaining)
+        (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
+          (if (= 3 (get-list-live-cells old-game-state (first (first remaining)) (second (first remaining))))
+            true
+            false))))))
+
 (defn determine-next-game-state
-  ""
+  "This is the msot important function of this program. It takes the current
+  game-state and computes the new game-state by getting a list of living cells,
+  then a list of the dead neighbors of those living cells. With that combined
+  list, it simply applies the rules of Conway's Game of Life to each relevant
+  cell."
   [old-game-state]
-  (loop [remaining old-game-state new-game-state {}]
-    (recur nil nil)))
+  (let [living-cells (get-list-live-cells game-state)]
+    (let [dead-cells (get-list-potentially-pregnant-cells
+        game-state living-cells)]
+      (determine-next-game-state-dead old-game-state dead-cells
+        (determine-next-game-state-living old-game-state living-cells old-game-state)))))
+
 
 (defn test-get-cell
   ""
@@ -73,21 +115,6 @@
     (println (str "Get neighbors of 1, 1: " (get-neighbors game-state 1 1)))
     (println (str "Get count of living neighbors of 1, 1: "
       (get-count-living-neighbors game-state 1 1)))))
-
-(defn prototype-get-living-cells
-  "This is a prototype of get-list-live-cells I wrote so I could build up the
-  functionality from an outer map with a single key to the full-scale solution."
-  []
-  (let [game-state
-        {0 {0 true, 1 nil, 2 true}
-         1 {0 true, 1 nil, 2 true}}]
-        (loop [remaining-keys (keys game-state) all-cells []]
-          (if (empty? remaining-keys)
-            all-cells
-            (recur (rest remaining-keys)
-              (concat all-cells
-                (let [my-key (first remaining-keys)]
-                  (map #(list % my-key) (keys (get game-state my-key))))))))))
 
 (defn -main
   "Run a simulation of Conway's Game of Life."
