@@ -124,16 +124,16 @@
 
 (defn visualize-game-state
   ""
-  [game-state]
-  (loop [remaining-keys (keys game-state) retval ""]
-    (if (empty? remaining-keys)
+  [game-state min-x max-x min-y max-y]
+  (loop [y min-y retval ""]
+    (if (= y max-y)
       retval
-      (recur (rest remaining-keys) (str retval "\n"
-        (loop [x -4 subval retval]
-          (if (= x 8)
+      (recur (inc y) (str retval "\n"
+        (loop [x min-x subval ""]
+          (if (= x max-x)
             subval
             (recur (inc x) (str subval
-              (if (is-dead? (get-in game-state [(first remaining-keys) x]))
+              (if (is-dead? (get-in game-state [y x]))
                 "_"
                 "*"))))))))))
 
@@ -153,4 +153,5 @@
   [& args]
   ;(test-get-cell)
   (test-next-game-state)
-  (println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}})))
+  (println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}))
+  (println (visualize-game-state {0 {1 true} 1 {1 true} 2 {1 true}} 0 4 0 4)))
