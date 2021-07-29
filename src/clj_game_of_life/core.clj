@@ -6,23 +6,28 @@
   [game-state x y]
   (get-in game-state [y x]))
 
+(defn is-dead?
+  ""
+  [value]
+  (or (nil? value) (false? value)))
+
 (defn get-neighbors
     "Get the eight neighbors of the specified cell as a list of coordinate
     pairs (list of lists)."
     [game-state x y]
-    (list '((- x 1) (- y 1))
-    '(x (- y 1))
-    '((+ x 1) (- y 1))
-    '((- x 1) y)
-    '(x (+ y 1))
-    '((- x 1) (+ y 1))
-    '(x (+ y 1))
-    '((+ x 1) (+ y 1))))
+    (list (list (- x 1) (- y 1))
+    (list x (- y 1))
+    (list (+ x 1) (- y 1))
+    (list (- x 1) y)
+    (list x (+ y 1))
+    (list (- x 1) (+ y 1))
+    (list x (+ y 1))
+    (list (+ x 1) (+ y 1))))
 
 (defn get-neighbors-values
   "Get the eight neighbors of the specified cell."
   [game-state x y]
-  (map #(apply get-cell %) (get-neighbors game-state x y)))
+  (map #(get-cell game-state (first %) (second %)) (get-neighbors game-state x y)))
 
 (defn get-count-living-neighbors
   "Calls get-neighbors to get a sequence of neighbors, returns the
@@ -47,8 +52,9 @@
   "Gets the list of currently-dead cells that are adjacent to currently-living
   cells. These are the ones that may come alive in the next iteration."
   [game-state living-cells]
-  (filter #(false? (apply get-cell %))
-    (set (map #(get-neighbors game-state (first %) (second %)) living-cells))))
+  (filter #(is-dead? (get-cell game-state (first %) (second %)))
+    (set (apply concat
+      (map #(get-neighbors game-state (first %) (second %)) living-cells)))))
 
 (defn determine-next-game-state-living
   "Given the current game state, a list of living cells, and a working version
@@ -59,7 +65,7 @@
       nexter-game-state
       (recur (rest remaining)
         (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
-          (let [num-living-neighbors (get-list-live-cells old-game-state (first (first remaining)) (second (first remaining)))]
+          (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
             (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
                 true
                 false)))))))
@@ -73,7 +79,7 @@
       nexter-game-state
       (recur (rest remaining)
         (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
-          (if (= 3 (get-list-live-cells old-game-state (first (first remaining)) (second (first remaining))))
+          (if (= 3 (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining))))
             true
             false))))))
 
@@ -84,9 +90,9 @@
   list, it simply applies the rules of Conway's Game of Life to each relevant
   cell."
   [old-game-state]
-  (let [living-cells (get-list-live-cells game-state)]
+  (let [living-cells (get-list-live-cells old-game-state)]
     (let [dead-cells (get-list-potentially-pregnant-cells
-        game-state living-cells)]
+        old-game-state living-cells)]
       (determine-next-game-state-dead old-game-state dead-cells
         (determine-next-game-state-living old-game-state living-cells old-game-state)))))
 
@@ -116,9 +122,35 @@
     (println (str "Get count of living neighbors of 1, 1: "
       (get-count-living-neighbors game-state 1 1)))))
 
+(defn visualize-game-state
+  ""
+  [game-state]
+  (loop [remaining-keys (keys game-state) retval ""]
+    (if (empty? remaining-keys)
+      retval
+      (recur (rest remaining-keys) (str retval "\n"
+        (loop [x -4 subval retval]
+          (if (= x 8)
+            subval
+            (recur (inc x) (str subval
+              (if (is-dead? (get-in game-state [(first remaining-keys) x]))
+                "_"
+                "*"))))))))))
+
+(defn test-next-game-state
+  ""
+  []
+  (let [game-state
+      {0 {0 true}
+       1 {0 true}
+       2 {0 true}}
+    ]
+    (println (str "Next game state: " (determine-next-game-state game-state)))
+  ))
+
 (defn -main
   "Run a simulation of Conway's Game of Life."
   [& args]
-  (test-get-cell)
-  (println (str "prototype-get-living-cells: "
-      (take 6 (prototype-get-living-cells)))))
+  ;(test-get-cell)
+  (test-next-game-state)
+  (println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}})))
