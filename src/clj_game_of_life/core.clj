@@ -153,5 +153,10 @@
   [& args]
   ;(test-get-cell)
   (test-next-game-state)
-  (println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}))
-  (println (visualize-game-state {0 {1 true} 1 {1 true} 2 {1 true}} 0 4 0 4)))
+  ;(println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}))
+  (println (visualize-game-state {0 {1 true} 1 {1 true} 2 {1 true}} 0 4 0 4))
+  (println (visualize-game-state
+    (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}) 0 4 0 4))
+  (println
+    (get-count-living-neighbors {0 {1 true} 1 {1 true} 2 {1 true}} 1 2))
+  )
