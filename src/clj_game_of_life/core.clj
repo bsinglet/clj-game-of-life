@@ -126,7 +126,7 @@
 (defn visualize-game-state
   "Displays an ASCII image of a given game-state."
   ([game-state]
-    (visualize-game-state game-state -5 5 -5 5)
+    (visualize-game-state game-state -1 10 -1 10)
     )
   ([game-state min-x max-x min-y max-y]
   (loop [y min-y retval ""]
@@ -161,7 +161,7 @@
   _*_*
   __*_"
   []
-  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 3 true} 3 {2 true})
+  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 3 true} 3 {2 true}})
 
 (defn get-boat-game-state
   "Returns the still-life pattern of a boat.
@@ -248,8 +248,7 @@
   []
   {0 {1 true}
    1 {2 true}
-   2 {0 true 1 true 2 true}}
-  )
+   2 {0 true 1 true 2 true}})
 
 (defn get-light-weight-spaceship-game-state
   "Returns the pattern of a light-weight spaceship (LWSS)."
@@ -275,27 +274,31 @@
    2 {0 true 1 true 2 true 3 true 4 true 5 true}
    3 {1 true 2 true 3 true 4 true}})
 
+(defn visualize-pattern-and-next
+  ""
+  [game-state]
+  (println "")
+  (println (visualize-game-state game-state))
+  (println (visualize-game-state (determine-next-game-state game-state)))
+  )
+
 (defn test-next-game-state
   "A series of tests to see how the determine-next-game-state function operates."
   []
-  (let [game-state
-      {0 {1 true}
-       1 {1 true}
-       2 {1 true}}
-    ]
-    (println (str "Next game state: " (determine-next-game-state game-state)))
-    (println (visualize-game-state game-state))
-    (println (visualize-game-state (determine-next-game-state game-state)))
-    (println "")
-    (println (visualize-game-state (get-block-game-state)))
-    (println (visualize-game-state (determine-next-game-state (get-block-game-state))))
-    (println "")
-    (println (visualize-game-state (get-beehive-game-state)))
-    (println (visualize-game-state (determine-next-game-state (get-beehive-game-state))))
-    (println "")
-    (println (visualize-game-state (get-toad-game-state)))
-    (println (visualize-game-state (determine-next-game-state (get-toad-game-state))))
-  ))
+  (loop [patterns [(get-block-game-state) (get-beehive-game-state)
+      (get-loaf-game-state) (get-boat-game-state) (get-boat-game-state)
+      (get-tub-game-state) (get-blinker-game-state) (get-toad-game-state)
+      (get-beacon-game-state) (get-pulsar-game-state)
+      (get-pentadecathlon-game-state) (get-glider-game-state)
+      (get-light-weight-spaceship-game-state)
+      (get-middle-weight-spaceship-game-state)
+      (get-heavy-weight-spaceship-game-state)
+      ]]
+    (if (empty? patterns)
+      nil
+      (do
+        (visualize-pattern-and-next (first patterns))
+        (recur (rest patterns))))))
 
 (defn -main
   "Run a simulation of Conway's Game of Life."
