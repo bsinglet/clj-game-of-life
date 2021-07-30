@@ -154,18 +154,126 @@
   []
   {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}})
 
+(defn get-loaf-game-state
+  "Returns the still-life pattern of a loaf.
+  _**_
+  *__*
+  _*_*
+  __*_"
+  []
+  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 3 true} 3 {2 true})
+
+(defn get-boat-game-state
+  "Returns the still-life pattern of a boat.
+  **_
+  *_*
+  _*_"
+  []
+  {0 {0 true 1 true} 1 {0 true 2 true} 2 {1 true}})
+
+(defn get-tub-game-state
+  "Returns the still-life pattern of a tub.
+  _*_
+  *_*
+  _*_"
+  []
+  {0 {1 true} 1 {0 true 2 true} 2 {1 true}})
+
 (defn get-blinker-game-state
   "Returns the oscillator pattern of a blinker, which is a 1x3 vertical line
-  that switches betwen a 3x1 horizontal line, then repeats."
+  that switches betwen a 3x1 horizontal line, then repeats (period 2.)"
   []
   {0 {1 true} 1 {1 true} 2 {1 true}})
 
 (defn get-toad-game-state
-  "Returns the oscillator pattern of a toad.
+  "Returns the oscillator pattern of a toad (period 2.)
   _***
   ***_"
   []
   {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}})
+
+(defn get-beacon-game-state
+  "Returns the oscillator pattern of a beacon (period 2.)
+  **__
+  **__
+  __**
+  __**"
+  []
+  {0 {0 true 1 true} 1 {0 true 1 true} 2 {2 true 3 true} 3 {2 true 3 true}})
+
+(defn get-pulsar-game-state
+  "Returns the oscillator pattern of a pulsar (period 3.)
+  __***___***__
+  _____________
+  *____*_*____*
+  *____*_*____*
+  *____*_*____*
+  __***___***__
+  _____________
+  __***___***__
+  _____________
+  *____*_*____*
+  *____*_*____*
+  *____*_*____*
+  __***___***__"
+  []
+  {0 {2 true 3 true 4 true 8 true 9 true 10 true}
+   2 {0 true 5 true 7 true 12 true}
+   3 {0 true 5 true 7 true 12 true}
+   4 {0 true 5 true 7 true 12 true}
+   5 {2 true 3 true 4 true 8 true 9 true 10 true}
+   7 {2 true 3 true 4 true 8 true 9 true 10 true}
+   8 {0 true 5 true 7 true 12 true}
+   9 {0 true 5 true 7 true 12 true}
+   10 {0 true 5 true 7 true 12 true}
+   12 {2 true 3 true 4 true 8 true 9 true 10 true}})
+
+(defn get-pentadecathlon-game-state
+  "Returns the oscillator pattern of a penta-decathlon, which is a period 15
+  oscillator."
+  []
+  {0 {1 true 2 true 3 true}
+   1 {0 true 4 true}
+   2 {0 true 4 true}
+   3 {1 true 2 true 3 true}
+   8 {1 true 2 true 3 true}
+   9 {0 true 4 true}
+   10 {0 true 4 true}
+   11 {1 true 2 true 3 true}
+   })
+
+(defn get-glider-game-state
+  "Returns the spaceship pattern of a glider, which is a pattern that moves
+  across the universe while changing shape."
+  []
+  {0 {1 true}
+   1 {2 true}
+   2 {0 true 1 true 2 true}}
+  )
+
+(defn get-light-weight-spaceship-game-state
+  "Returns the pattern of a light-weight spaceship (LWSS)."
+  []
+  {0 {2 true 3 true}
+   1 {0 true 1 true 3 true 4 true}
+   2 {0 true 1 true 2 true 3 true}
+   3 {1 true 2 true}})
+
+(defn get-middle-weight-spaceship-game-state
+  "Returns the pattern of a middle-weight spaceship (MWSS)."
+  []
+  {0 {3 true 4 true}
+   1 {0 true 1 true 2 true 4 true 5 true}
+   2 {0 true 1 true 2 true 3 true 4 true}
+   3 {1 true 2 true 3 true}})
+
+(defn get-heavy-weight-spaceship-game-state
+  "Returns the pattern of a heavy-weight spaceship (HWSS)."
+  []
+  {0 {4 true 5 true}
+   1 {0 true 1 true 2 true 3 true 5 true 6 true}
+   2 {0 true 1 true 2 true 3 true 4 true 5 true}
+   3 {1 true 2 true 3 true 4 true}})
 
 (defn test-next-game-state
   "A series of tests to see how the determine-next-game-state function operates."
