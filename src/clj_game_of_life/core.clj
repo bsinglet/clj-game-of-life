@@ -141,6 +141,32 @@
                 "_"
                 "*")))))))))))
 
+(defn get-block-game-state
+  "Returns the still-life pattern of a 2x2 block."
+  []
+  {0 {0 true 1 true} 1 {0 true 1 true}})
+
+(defn get-beehive-game-state
+  "Returns the still-life pattern of a beehive.
+  _**_
+  *__*
+  _**_"
+  []
+  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}})
+
+(defn get-blinker-game-state
+  "Returns the oscillator pattern of a blinker, which is a 1x3 vertical line
+  that switches betwen a 3x1 horizontal line, then repeats."
+  []
+  {0 {1 true} 1 {1 true} 2 {1 true}})
+
+(defn get-toad-game-state
+  "Returns the oscillator pattern of a toad.
+  _***
+  ***_"
+  []
+  {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}})
+
 (defn test-next-game-state
   "A series of tests to see how the determine-next-game-state function operates."
   []
@@ -153,14 +179,14 @@
     (println (visualize-game-state game-state))
     (println (visualize-game-state (determine-next-game-state game-state)))
     (println "")
-    (println (visualize-game-state {0 {0 true 1 true} 1 {0 true 1 true}}))
-    (println (visualize-game-state (determine-next-game-state {0 {0 true 1 true} 1 {0 true 1 true}})))
+    (println (visualize-game-state (get-block-game-state)))
+    (println (visualize-game-state (determine-next-game-state (get-block-game-state))))
     (println "")
-    (println (visualize-game-state {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}}))
-    (println (visualize-game-state (determine-next-game-state {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}})))
+    (println (visualize-game-state (get-beehive-game-state)))
+    (println (visualize-game-state (determine-next-game-state (get-beehive-game-state))))
     (println "")
-    (println (visualize-game-state {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}}))
-    (println (visualize-game-state (determine-next-game-state {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}})))
+    (println (visualize-game-state (get-toad-game-state)))
+    (println (visualize-game-state (determine-next-game-state (get-toad-game-state))))
   ))
 
 (defn -main
