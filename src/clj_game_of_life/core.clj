@@ -7,7 +7,7 @@
   (get-in game-state [y x]))
 
 (defn is-dead?
-  ""
+  "This function allows dead cells to be represented as either false or nil."
   [value]
   (or (nil? value) (false? value)))
 
@@ -98,7 +98,8 @@
 
 
 (defn test-get-cell
-  ""
+  "Some test calls to get-cell and related functions to determine they operate
+  as expected."
   []
   (let [game-state
         {0 {0 "0, 0"
@@ -123,8 +124,11 @@
       (get-count-living-neighbors game-state 1 1)))))
 
 (defn visualize-game-state
-  ""
-  [game-state min-x max-x min-y max-y]
+  "Displays an ASCII image of a given game-state."
+  ([game-state]
+    (visualize-game-state game-state -5 5 -5 5)
+    )
+  ([game-state min-x max-x min-y max-y]
   (loop [y min-y retval ""]
     (if (= y max-y)
       retval
@@ -135,28 +139,32 @@
             (recur (inc x) (str subval
               (if (is-dead? (get-in game-state [y x]))
                 "_"
-                "*"))))))))))
+                "*")))))))))))
 
 (defn test-next-game-state
-  ""
+  "A series of tests to see how the determine-next-game-state function operates."
   []
   (let [game-state
-      {0 {0 true}
-       1 {0 true}
-       2 {0 true}}
+      {0 {1 true}
+       1 {1 true}
+       2 {1 true}}
     ]
     (println (str "Next game state: " (determine-next-game-state game-state)))
+    (println (visualize-game-state game-state))
+    (println (visualize-game-state (determine-next-game-state game-state)))
+    (println "")
+    (println (visualize-game-state {0 {0 true 1 true} 1 {0 true 1 true}}))
+    (println (visualize-game-state (determine-next-game-state {0 {0 true 1 true} 1 {0 true 1 true}})))
+    (println "")
+    (println (visualize-game-state {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}}))
+    (println (visualize-game-state (determine-next-game-state {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}})))
+    (println "")
+    (println (visualize-game-state {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}}))
+    (println (visualize-game-state (determine-next-game-state {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}})))
   ))
 
 (defn -main
   "Run a simulation of Conway's Game of Life."
   [& args]
-  ;(test-get-cell)
   (test-next-game-state)
-  ;(println (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}))
-  (println (visualize-game-state {0 {1 true} 1 {1 true} 2 {1 true}} 0 4 0 4))
-  (println (visualize-game-state
-    (determine-next-game-state {0 {1 true} 1 {1 true} 2 {1 true}}) 0 4 0 4))
-  (println
-    (get-count-living-neighbors {0 {1 true} 1 {1 true} 2 {1 true}} 1 2))
   )
