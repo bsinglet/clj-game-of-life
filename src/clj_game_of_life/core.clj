@@ -68,11 +68,11 @@
           (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
             (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
                 (do
-                  (println (str "Living cell " (first (first remaining)) (second (first remaining)) " survives."))
+                  (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
                   true)
                 (do
-                  (println (str "Living cell " (first (first remaining)) (second (first remaining))
-                  " dies because it has " num-living-neighbors " living neighbors."))
+                  (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
+                  ") dies because it has " num-living-neighbors " living neighbors."))
                   false))))))))
 
 (defn determine-next-game-state-dead
@@ -86,13 +86,13 @@
         (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
           (if (= 3 (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining))))
             (do
-              (println (str "Dead cell " (first (first remaining)) (second (first remaining))
-                " is born because it has "
+              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
+                ") is born because it has "
                 (get-count-living-neighbors old-game-state (first (first remaining))
                   (second (first remaining))) " living neighbors."))
               true)
             (do
-              (println (str "Dead cell " (first (first remaining)) (second (first remaining)) " stays dead."))
+              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
               false)))))))
 
 (defn determine-next-game-state
