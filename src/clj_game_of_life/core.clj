@@ -12,6 +12,7 @@
   (or (nil? value) (false? value)))
 
 (defn remove-non-trues
+  "Given a map, only keep values that are true."
   [my-map]
   (reduce (fn [new-map [key val]]
       (if (true? val)
@@ -21,6 +22,7 @@
       my-map))
 
 (defn remove-empty
+  "Given a map of maps, only keep values that are non-empty."
   [my-map]
   (reduce (fn [new-map [key val]]
       (if (not (empty? val))
@@ -30,6 +32,8 @@
       my-map))
 
 (defn filter-cells
+  "Given a game-state, remove the dead-cells. This is intended to be called by
+  remove-dead-cells, which removes any empty rows on the board."
   [game-state]
   (loop [remaining-keys (keys game-state) retval {}]
     (if (empty? remaining-keys)
@@ -90,7 +94,7 @@
       (map #(get-neighbors game-state (first %) (second %)) living-cells)))))
 
 (defn nexter-game-state-living
-  ""
+  "This function computes the next state of a given living cell."
   [nexter-game-state old-game-state current-cell]
   (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
     (let [num-living-neighbors (get-count-living-neighbors old-game-state (first current-cell) (second current-cell))]
@@ -116,7 +120,7 @@
       ))))
 
 (defn nexter-game-state-dead
-  ""
+  "This function computes the next state of a given dead cell."
   [nexter-game-state old-game-state current-cell]
   (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
     (if (= 3 (get-count-living-neighbors old-game-state (first current-cell) (second current-cell)))
@@ -334,11 +338,17 @@
    3 {1 true 2 true 3 true 4 true}})
 
 (defn visualize-pattern-and-next
-  ""
+  "This function prints the given game-state and the following one. It also
+  returns the next game state, with the dead cells removed so you can better
+  inspect the result, or chain multiple calls to this function."
   [game-state]
-  (println "")
-  (println (visualize-game-state game-state))
-  (println (visualize-game-state (determine-next-game-state game-state)))
+  (let [next-game-state (determine-next-game-state game-state)]
+    (println "")
+    (println (visualize-game-state game-state))
+    (println (visualize-game-state next-game-state))
+    ; we return a cleaned-up version of the next state, to make debugging
+    ; easier.
+    (remove-dead-cells next-game-state))
   )
 
 (defn test-next-game-state
