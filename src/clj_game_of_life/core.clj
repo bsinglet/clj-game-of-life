@@ -11,6 +11,39 @@
   [value]
   (or (nil? value) (false? value)))
 
+(defn remove-non-trues
+  [my-map]
+  (reduce (fn [new-map [key val]]
+      (if (true? val)
+        (assoc new-map key val)
+        new-map))
+      {}
+      my-map))
+
+(defn remove-empty
+  [my-map]
+  (reduce (fn [new-map [key val]]
+      (if (not (empty? val))
+        (assoc new-map key val)
+        new-map))
+      {}
+      my-map))
+
+(defn filter-cells
+  [game-state]
+  (loop [remaining-keys (keys game-state) retval {}]
+    (if (empty? remaining-keys)
+      retval
+      (recur (rest remaining-keys)
+        (assoc retval (first remaining-keys)
+        (remove-non-trues (get game-state (first remaining-keys))))))))
+
+(defn remove-dead-cells
+  "This function just purges the dead cells from the map to make it easier for
+  a human to read."
+  [game-state]
+  (remove-empty (filter-cells game-state)))
+
 (defn get-neighbors
     "Get the eight neighbors of the specified cell as a list of coordinate
     pairs (list of lists)."
@@ -56,6 +89,21 @@
     (set (apply concat
       (map #(get-neighbors game-state (first %) (second %)) living-cells)))))
 
+(defn nexter-game-state-living
+  ""
+  [nexter-game-state old-game-state current-cell]
+  (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
+    (let [num-living-neighbors (get-count-living-neighbors old-game-state (first current-cell) (second current-cell))]
+      (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
+          (do
+            (println (str "Living cell (" (first current-cell) ", " (second current-cell) ") survives."))
+            true)
+          (do
+            (println (str "Living cell (" (first current-cell) ", " (second current-cell)
+            ") dies because it has " num-living-neighbors " living neighbors."))
+            false))))
+  )
+
 (defn determine-next-game-state-living
   "Given the current game state, a list of living cells, and a working version
   of the next game state, compute the next values for those positions."
@@ -64,16 +112,24 @@
     (if (empty? remaining)
       nexter-game-state
       (recur (rest remaining)
-        (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
-          (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
-            (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
-                (do
-                  (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
-                  true)
-                (do
-                  (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
-                  ") dies because it has " num-living-neighbors " living neighbors."))
-                  false))))))))
+        (nexter-game-state-living nexter-game-state old-game-state (first remaining))
+      ))))
+
+(defn nexter-game-state-dead
+  ""
+  [nexter-game-state old-game-state current-cell]
+  (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
+    (if (= 3 (get-count-living-neighbors old-game-state (first current-cell) (second current-cell)))
+      (do
+        (println (str "Dead cell (" (first current-cell) ", " (second current-cell)
+          ") is born because it has "
+          (get-count-living-neighbors old-game-state (first current-cell)
+            (second current-cell) " living neighbors.")))
+        true)
+      (do
+        (println (str "Dead cell (" (first current-cell) ", " (second current-cell) ") stays dead."))
+        false)))
+  )
 
 (defn determine-next-game-state-dead
   "Given the current game state, a list of dead cells, and a working version
@@ -83,17 +139,8 @@
     (if (empty? remaining)
       nexter-game-state
       (recur (rest remaining)
-        (assoc-in nexter-game-state [(first (first remaining)) (second (first remaining))]
-          (if (= 3 (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining))))
-            (do
-              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
-                ") is born because it has "
-                (get-count-living-neighbors old-game-state (first (first remaining))
-                  (second (first remaining))) " living neighbors."))
-              true)
-            (do
-              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
-              false)))))))
+        (nexter-game-state-dead nexter-game-state old-game-state (first remaining))
+        ))))
 
 (defn determine-next-game-state
   "This is the msot important function of this program. It takes the current
