@@ -96,11 +96,11 @@
     (let [num-living-neighbors (get-count-living-neighbors old-game-state (first current-cell) (second current-cell))]
       (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
           (do
-            (println (str "Living cell (" (first current-cell) ", " (second current-cell) ") survives."))
+            ;(println (str "Living cell (" (first current-cell) ", " (second current-cell) ") survives."))
             true)
           (do
-            (println (str "Living cell (" (first current-cell) ", " (second current-cell)
-            ") dies because it has " num-living-neighbors " living neighbors."))
+            ;(println (str "Living cell (" (first current-cell) ", " (second current-cell)
+            ;") dies because it has " num-living-neighbors " living neighbors."))
             false))))
   )
 
@@ -121,13 +121,13 @@
   (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
     (if (= 3 (get-count-living-neighbors old-game-state (first current-cell) (second current-cell)))
       (do
-        (println (str "Dead cell (" (first current-cell) ", " (second current-cell)
-          ") is born because it has "
-          (get-count-living-neighbors old-game-state (first current-cell)
-            (second current-cell) " living neighbors.")))
+        ;(println (str "Dead cell (" (first current-cell) ", " (second current-cell)
+        ;  ") is born because it has "
+        ;  (get-count-living-neighbors old-game-state (first current-cell)
+        ;    (second current-cell) " living neighbors.")))
         true)
       (do
-        (println (str "Dead cell (" (first current-cell) ", " (second current-cell) ") stays dead."))
+        ;(println (str "Dead cell (" (first current-cell) ", " (second current-cell) ") stays dead."))
         false)))
   )
 
