@@ -186,18 +186,39 @@
     (println (str "Get count of living neighbors of 1, 1: "
       (get-count-living-neighbors game-state 1 1)))))
 
+(defn get-all-sub-keys
+  "Given a map of maps, returns a list of all the inner-keys."
+  [game-state]
+  (apply concat (map #(keys %) (vals game-state))))
+
+(defn get-bounding-box
+  "Given a game-state, returns a list containing the min-x, max-x, min-y, and
+  max-y, in that order."
+  [game-state]
+  (let [inner-keys (get-all-sub-keys game-state)
+        outer-keys (keys game-state)]
+    [(apply min inner-keys)
+     (apply max inner-keys)
+     (apply min outer-keys)
+     (apply max outer-keys)]))
+
 (defn visualize-game-state
   "Displays an ASCII image of a given game-state."
   ([game-state]
-    (visualize-game-state game-state -1 10 -1 10)
+    (let [bounding-box (get-bounding-box game-state)]
+      (let [min-x (nth bounding-box 0)
+            max-x (nth bounding-box 1)
+            min-y (nth bounding-box 2)
+            max-y (nth bounding-box 3)]
+          (visualize-game-state game-state min-x max-x min-y max-y)))
     )
   ([game-state min-x max-x min-y max-y]
   (loop [y min-y retval ""]
-    (if (= y max-y)
+    (if (> y max-y)
       retval
       (recur (inc y) (str retval "\n"
         (loop [x min-x subval ""]
-          (if (= x max-x)
+          (if (> x max-x)
             subval
             (recur (inc x) (str subval
               (if (is-dead? (get-in game-state [y x]))
@@ -336,6 +357,19 @@
    1 {0 true 1 true 2 true 3 true 5 true 6 true}
    2 {0 true 1 true 2 true 3 true 4 true 5 true}
    3 {1 true 2 true 3 true 4 true}})
+
+(defn get-gosper-glider-gun-game-state
+  "Returns the first known glider gun, discovered by Bill Gosper in 1970."
+  []
+  {0 {24 true}
+   1 {22 true 24 true}
+   2 {12 true 13 true 20 true 21 true 34 true 35 true}
+   3 {11 true 15 true 20 true 21 true 34 true 35 true}
+   4 {0 true 1 true 10 true 16 true 20 true 21 true}
+   5 {0 true 1 true 10 true 14 true 16 true 17 true 22 true 24 true}
+   6 {10 true 16 true 24 true}
+   7 {11 true 15 true}
+   8 {12 true 13 true}})
 
 (defn visualize-pattern-and-next
   "This function prints the given game-state and the following one. It also
