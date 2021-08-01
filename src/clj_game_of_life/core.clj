@@ -48,19 +48,19 @@
   "Given the current game state, a list of living cells, and a working version
   of the next game state, compute the next values for those positions."
   [old-game-state next-game-state]
-  (loop [remaining old-game-state nexter-game-state []]]
+  (loop [remaining old-game-state nexter-game-state []]
     (if (empty? remaining)
       nexter-game-state
       (recur (rest remaining)
         (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
           (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
             (do
-              ;(println (str "Living cell (" (first current-cell) ", " (second current-cell) ") survives."))
-              (concat nexter-game-state (first remaining)))
+              (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
+              (conj nexter-game-state (first remaining)))
             (do
-              ;(println (str "Living cell (" (first current-cell) ", " (second current-cell)
-              ;") dies because it has " num-living-neighbors " living neighbors."))
-              next-game-state)))))))
+              (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
+                ") dies because it has " num-living-neighbors " living neighbors."))
+              nexter-game-state)))))))
 
 (defn determine-next-game-state-dead
   "Given the current game state, a list of dead cells, and a working version
@@ -73,11 +73,11 @@
         (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
           (if (= 3 num-living-neighbors)
             (do
-              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
-              ;  ") is born because it has " num-living-neighbors " living neighbors.")))
-              (concat next-game-state (first remaining)))
+              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
+                ") is born because it has " num-living-neighbors " living neighbors."))
+              (conj nexter-game-state (first remaining)))
             (do
-              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
+              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
               nexter-game-state)))))))
 
 (defn determine-next-game-state
@@ -96,16 +96,10 @@
   as expected."
   []
   (let [game-state
-        ['(0 0)
-         '(1 0)
-         '(2 0)
-         '(0 1)
-         '(1 1)
-         '(2 1)
-         '(-5 3)
-         '(4 3)
-         '(-10 4)
-         '(10 4)
+        ['(0 0) '(1 0) '(2 0)
+         '(0 1) '(1 1) '(2 1)
+         '(-5 3) '(4 3)
+         '(-10 4) '(10 4)
          '(4 6)
          '(7 7)]]
     (println (str "Game state: " game-state))
@@ -156,10 +150,8 @@
 (defn get-block-game-state
   "Returns the still-life pattern of a 2x2 block."
   []
-  ['(0 0)
-   '(1 0)
-   '(0 1)
-   '(1 1)])
+  ['(0 0) '(1 0)
+   '(0 1) '(1 1)])
 
 (defn get-beehive-game-state
   "Returns the still-life pattern of a beehive.
@@ -167,12 +159,9 @@
   *__*
   _**_"
   []
-  ['(1 0)
-   '(2 0)
-   '(0 1)
-   '(3 1)
-   '(1 2)
-   '(2 2)])
+  ['(1 0) '(2 0)
+   '(0 1) '(3 1)
+   '(1 2) '(2 2)])
 
 (defn get-loaf-game-state
   "Returns the still-life pattern of a loaf.
@@ -181,12 +170,9 @@
   _*_*
   __*_"
   []
-  ['(1 0)
-   '(2 0)
-   '(0 1)
-   '(3 1)
-   '(1 2)
-   '(3 2)
+  ['(1 0) '(2 0)
+   '(0 1) '(3 1)
+   '(1 2) '(3 2)
    '(2 3)])
 
 (defn get-boat-game-state
@@ -195,10 +181,8 @@
   *_*
   _*_"
   []
-  ['(0 0)
-   '(1 0)
-   '(0 1)
-   '(2 1)
+  ['(0 0) '(1 0)
+   '(0 1) '(2 1)
    '(1 2)])
 
 (defn get-tub-game-state
@@ -208,8 +192,7 @@
   _*_"
   []
   ['(1 0)
-   '(0 1)
-   '(2 1)
+   '(0 1) '(2 1)
    '(1 2)])
 
 (defn get-blinker-game-state
@@ -225,12 +208,8 @@
   _***
   ***_"
   []
-  ['(1 0)
-   '(2 0)
-   '(3 0)
-   '(0 1)
-   '(1 1)
-   '(2 1)])
+  ['(1 0) '(2 0) '(3 0)
+   '(0 1) '(1 1) '(2 1)])
 
 (defn get-beacon-game-state
   "Returns the oscillator pattern of a beacon (period 2.)
@@ -239,14 +218,10 @@
   __**
   __**"
   []
-  ['(0 0)
-   '(1 0)
-   '(0 1)
-   '(1 1)
-   '(2 2)
-   '(3 2)
-   '(2 3)
-   '(3 3)])
+  ['(0 0) '(1 0)
+   '(0 1) '(1 1)
+   '(2 2) '(3 2)
+   '(2 3) '(3 3)])
 
 (defn get-pulsar-game-state
   "Returns the oscillator pattern of a pulsar (period 3.)
@@ -343,7 +318,7 @@
     (println (visualize-game-state next-game-state))
     ; we return a cleaned-up version of the next state, to make debugging
     ; easier.
-    (remove-dead-cells next-game-state))
+    next-game-state)
   )
 
 (defn test-next-game-state
