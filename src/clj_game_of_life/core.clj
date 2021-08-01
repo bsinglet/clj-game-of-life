@@ -44,41 +44,37 @@
     (set (apply concat
       (map #(get-neighbors game-state (first %) (second %)) game-state)))))
 
+(defn will-survive?
+  "Contains the rules for Conway's Game of Life that apply to living cells."
+  [game-state [x y]]
+  (let [num-living-neighbors (get-count-living-neighbors game-state x y)]
+    (if (and (not (is-dead? (get-cell game-state x y)))
+        (or (= num-living-neighbors 2) (= num-living-neighbors 3)))
+      true
+      false)))
+
+(defn will-be-born?
+  "Contains the rules for Conway's Game of Life that apply to dead cells."
+  [game-state [x y]]
+  (let [num-living-neighbors (get-count-living-neighbors game-state x y)]
+    (if (and (is-dead? (get-cell game-state x y))
+        (= num-living-neighbors 3))
+      true
+      false)))
+
 (defn determine-next-game-state-living
   "Given the current game state, a list of living cells, and a working version
   of the next game state, compute the next values for those positions."
   [old-game-state next-game-state]
-  (loop [remaining old-game-state nexter-game-state []]
-    (if (empty? remaining)
-      nexter-game-state
-      (recur (rest remaining)
-        (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
-          (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
-            (do
-              ;(println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
-              (conj nexter-game-state (first remaining)))
-            (do
-              ;(println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
-              ;  ") dies because it has " num-living-neighbors " living neighbors."))
-              nexter-game-state)))))))
+  (apply conj next-game-state
+    (filter #(will-survive? old-game-state %) old-game-state)))
 
 (defn determine-next-game-state-dead
   "Given the current game state, a list of dead cells, and a working version
   of the next game state, compute the next values for those positions."
   [old-game-state dead-cells next-game-state]
-  (loop [remaining dead-cells nexter-game-state next-game-state]
-    (if (empty? remaining)
-      nexter-game-state
-      (recur (rest remaining)
-        (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
-          (if (= 3 num-living-neighbors)
-            (do
-              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
-              ;  ") is born because it has " num-living-neighbors " living neighbors."))
-              (conj nexter-game-state (first remaining)))
-            (do
-              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
-              nexter-game-state)))))))
+  (apply conj next-game-state
+    (filter #(will-be-born? old-game-state %) dead-cells)))
 
 (defn determine-next-game-state
   "This is the msot important function of this program. It takes the current
@@ -89,7 +85,7 @@
   [old-game-state]
   (let [dead-cells (get-list-potentially-pregnant-cells old-game-state)]
       (determine-next-game-state-dead old-game-state dead-cells
-        (determine-next-game-state-living old-game-state old-game-state))))
+        (determine-next-game-state-living old-game-state []))))
 
 (defn test-get-cell
   "Some test calls to get-cell and related functions to determine they operate
