@@ -353,6 +353,57 @@
       (recur (inc tick)
         (determine-next-game-state game-state)))))
 
+(defn encode-game-state
+  ""
+  [game-state]
+  (let [[min-x max-x min-y max-y] (get-bounding-box game-state)]
+    (str "x = " (+ (- max-x min-x) 1) ", y = "
+        (+ (- max-y min-y) 1) ", rule = B3/S23\n"
+    (loop [y min-y payload ""]
+      (if (> y max-y)
+        payload
+        (recur (inc y)
+          (str payload
+            (loop [x min-x sub_payload ""]
+              (if (> x max-x)
+                (str sub_payload "$")
+                (recur (inc x)
+                  (str sub_payload
+                    (if (get-cell game-state x y)
+                      "o"
+                      "b"))))))))))))
+
+(defn encode-consecutive-letters
+  ""
+  [s]
+  (loop [remaining s rle ""]
+    (if (< (count remaining) 2)
+      (str rle remaining)
+      (let [substring
+          (take-while #(= (str (first remaining)) (str %)) remaining)]
+        (recur
+            (clojure.string/join (drop (count substring) remaining))
+          (if (> (count substring) 1)
+            (str rle (count substring) (first substring))
+            (str rle substring)))))))
+
+(defn rle-encode-game-state
+  ""
+  [game-state]
+  (loop [lines (clojure.string/split (encode-game-state game-state) #"\$")
+         payload ""]
+    (if (empty? lines)
+      payload
+      (recur (rest lines) (str payload
+        (encode-consecutive-letters (first lines)))))))
+
+
+(defn save-game-state-as-golly-rle
+  ""
+  [game-state filename payload]
+  (spit filename payload)
+  )
+
 (defn -main
   "Run a simulation of Conway's Game of Life."
   [& args]
