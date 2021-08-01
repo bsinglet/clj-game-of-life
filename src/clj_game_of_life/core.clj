@@ -55,11 +55,11 @@
         (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
           (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
             (do
-              (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
+              ;(println (str "Living cell (" (first (first remaining)) ", " (second (first remaining)) ") survives."))
               (conj nexter-game-state (first remaining)))
             (do
-              (println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
-                ") dies because it has " num-living-neighbors " living neighbors."))
+              ;(println (str "Living cell (" (first (first remaining)) ", " (second (first remaining))
+              ;  ") dies because it has " num-living-neighbors " living neighbors."))
               nexter-game-state)))))))
 
 (defn determine-next-game-state-dead
@@ -73,11 +73,11 @@
         (let [num-living-neighbors (get-count-living-neighbors old-game-state (first (first remaining)) (second (first remaining)))]
           (if (= 3 num-living-neighbors)
             (do
-              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
-                ") is born because it has " num-living-neighbors " living neighbors."))
+              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining))
+              ;  ") is born because it has " num-living-neighbors " living neighbors."))
               (conj nexter-game-state (first remaining)))
             (do
-              (println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
+              ;(println (str "Dead cell (" (first (first remaining)) ", " (second (first remaining)) ") stays dead."))
               nexter-game-state)))))))
 
 (defn determine-next-game-state
@@ -143,7 +143,7 @@
           (if (> x max-x)
             subval
             (recur (inc x) (str subval
-              (if (is-dead? (get-cell game-state [y x]))
+              (if (is-dead? (get-cell game-state x y))
                 "_"
                 "*")))))))))))
 
