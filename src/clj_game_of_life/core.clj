@@ -1,5 +1,4 @@
-(ns clj-game-of-life.core
-  (:gen-class))
+(ns clj-game-of-life.core)
 
 (defn get-cell
   "Retrieve the contents of a given cell."
@@ -84,7 +83,9 @@
   cell."
   [old-game-state]
   (let [dead-cells (get-list-potentially-pregnant-cells old-game-state)]
+      ; calculate which dead cells will stay dead and which will be born.
       (determine-next-game-state-dead old-game-state dead-cells
+        ; calculate which cells will survive and which will die.
         (determine-next-game-state-living old-game-state []))))
 
 (defn test-get-cell
@@ -312,8 +313,7 @@
     (println "")
     (println (visualize-game-state game-state))
     (println (visualize-game-state next-game-state))
-    ; we return a cleaned-up version of the next state, to make debugging
-    ; easier.
+    ; we return the next state, to make debugging easier.
     next-game-state)
   )
 
@@ -335,8 +335,26 @@
         (visualize-pattern-and-next (first patterns))
         (recur (rest patterns))))))
 
+(defn simulate-game-of-life
+  "This is the CLI presentation function for the simulation. Arguments are:
+  -initial=The starting game-state.
+  -max-ticks=The number of steps in the simulation to run through.
+  -tick-length-ms=As the name implies, the time in milliseconds for each step."
+  [initial max-ticks tick-length-ms]
+  (loop [tick 0 game-state initial]
+    ; thanks to Peter Monk for posting his 2012 code with the following two-line
+    ; snippet to clear the screen. Credit: https://codereview.stackexchange.com/questions/17603/critique-my-clojure-game-of-life-code
+    (print (str (char 27) "[2J"))  ; ANSI: clear screen
+    (print (str (char 27) "[;H"))  ; ANSI: move cursor to top left corner of screen
+    (println (visualize-game-state game-state -1 150 -1 50))
+    (Thread/sleep tick-length-ms)
+    (if (> tick max-ticks)
+      tick
+      (recur (inc tick)
+        (determine-next-game-state game-state)))))
+
 (defn -main
   "Run a simulation of Conway's Game of Life."
   [& args]
-  (test-next-game-state)
+  (simulate-game-of-life (get-glider-game-state) 100 500)
   )
