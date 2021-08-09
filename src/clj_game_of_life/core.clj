@@ -1,52 +1,14 @@
-(ns clj-game-of-life.core
-  (:gen-class))
+(ns clj-game-of-life.core)
 
 (defn get-cell
   "Retrieve the contents of a given cell."
   [game-state x y]
-  (get-in game-state [y x]))
+  (some (fn [[sub_x sub_y]] (and (= sub_x x) (= sub_y y))) game-state))
 
 (defn is-dead?
   "This function allows dead cells to be represented as either false or nil."
   [value]
   (or (nil? value) (false? value)))
-
-(defn remove-non-trues
-  "Given a map, only keep values that are true."
-  [my-map]
-  (reduce (fn [new-map [key val]]
-      (if (true? val)
-        (assoc new-map key val)
-        new-map))
-      {}
-      my-map))
-
-(defn remove-empty
-  "Given a map of maps, only keep values that are non-empty."
-  [my-map]
-  (reduce (fn [new-map [key val]]
-      (if (not (empty? val))
-        (assoc new-map key val)
-        new-map))
-      {}
-      my-map))
-
-(defn filter-cells
-  "Given a game-state, remove the dead-cells. This is intended to be called by
-  remove-dead-cells, which removes any empty rows on the board."
-  [game-state]
-  (loop [remaining-keys (keys game-state) retval {}]
-    (if (empty? remaining-keys)
-      retval
-      (recur (rest remaining-keys)
-        (assoc retval (first remaining-keys)
-        (remove-non-trues (get game-state (first remaining-keys))))))))
-
-(defn remove-dead-cells
-  "This function just purges the dead cells from the map to make it easier for
-  a human to read."
-  [game-state]
-  (remove-empty (filter-cells game-state)))
 
 (defn get-neighbors
     "Get the eight neighbors of the specified cell as a list of coordinate
@@ -73,78 +35,45 @@
   (reduce + (map #(if (true? %) 1 0)
     (get-neighbors-values game-state x y))))
 
-(defn get-list-live-cells
-  "Given the game state, return a list of coordinate pairs of living cells. For
-  example: ((0 1) (0 3) (1 0) (5 6))"
-  [game-state]
-  (loop [remaining-keys (keys game-state) all-cells []]
-    (if (empty? remaining-keys)
-      all-cells
-      (recur (rest remaining-keys)
-        (concat all-cells
-          (let [my-key (first remaining-keys)]
-            (map #(list % my-key) (keys (get game-state my-key)))))))))
-
 (defn get-list-potentially-pregnant-cells
   "Gets the list of currently-dead cells that are adjacent to currently-living
   cells. These are the ones that may come alive in the next iteration."
-  [game-state living-cells]
+  [game-state]
   (filter #(is-dead? (get-cell game-state (first %) (second %)))
     (set (apply concat
-      (map #(get-neighbors game-state (first %) (second %)) living-cells)))))
+      (map #(get-neighbors game-state (first %) (second %)) game-state)))))
 
-(defn nexter-game-state-living
-  "This function computes the next state of a given living cell."
-  [nexter-game-state old-game-state current-cell]
-  (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
-    (let [num-living-neighbors (get-count-living-neighbors old-game-state (first current-cell) (second current-cell))]
-      (if (or (= num-living-neighbors 2) (= num-living-neighbors 3))
-          (do
-            ;(println (str "Living cell (" (first current-cell) ", " (second current-cell) ") survives."))
-            true)
-          (do
-            ;(println (str "Living cell (" (first current-cell) ", " (second current-cell)
-            ;") dies because it has " num-living-neighbors " living neighbors."))
-            false))))
-  )
+(defn will-survive?
+  "Contains the rules for Conway's Game of Life that apply to living cells."
+  [game-state [x y]]
+  (let [num-living-neighbors (get-count-living-neighbors game-state x y)]
+    (if (and (not (is-dead? (get-cell game-state x y)))
+        (or (= num-living-neighbors 2) (= num-living-neighbors 3)))
+      true
+      false)))
+
+(defn will-be-born?
+  "Contains the rules for Conway's Game of Life that apply to dead cells."
+  [game-state [x y]]
+  (let [num-living-neighbors (get-count-living-neighbors game-state x y)]
+    (if (and (is-dead? (get-cell game-state x y))
+        (= num-living-neighbors 3))
+      true
+      false)))
 
 (defn determine-next-game-state-living
   "Given the current game state, a list of living cells, and a working version
   of the next game state, compute the next values for those positions."
-  [old-game-state living-cells next-game-state]
-  (loop [remaining living-cells nexter-game-state next-game-state]
-    (if (empty? remaining)
-      nexter-game-state
-      (recur (rest remaining)
-        (nexter-game-state-living nexter-game-state old-game-state (first remaining))
-      ))))
-
-(defn nexter-game-state-dead
-  "This function computes the next state of a given dead cell."
-  [nexter-game-state old-game-state current-cell]
-  (assoc-in nexter-game-state [(second current-cell) (first current-cell)]
-    (if (= 3 (get-count-living-neighbors old-game-state (first current-cell) (second current-cell)))
-      (do
-        ;(println (str "Dead cell (" (first current-cell) ", " (second current-cell)
-        ;  ") is born because it has "
-        ;  (get-count-living-neighbors old-game-state (first current-cell)
-        ;    (second current-cell) " living neighbors.")))
-        true)
-      (do
-        ;(println (str "Dead cell (" (first current-cell) ", " (second current-cell) ") stays dead."))
-        false)))
-  )
+  [old-game-state next-game-state]
+  (apply conj next-game-state
+    (filter #(will-survive? old-game-state %) old-game-state)))
 
 (defn determine-next-game-state-dead
   "Given the current game state, a list of dead cells, and a working version
   of the next game state, compute the next values for those positions."
   [old-game-state dead-cells next-game-state]
-  (loop [remaining dead-cells nexter-game-state next-game-state]
-    (if (empty? remaining)
-      nexter-game-state
-      (recur (rest remaining)
-        (nexter-game-state-dead nexter-game-state old-game-state (first remaining))
-        ))))
+  (apply conj next-game-state
+    (filter #(will-be-born? old-game-state %) dead-cells)))
 
 (defn determine-next-game-state
   "This is the msot important function of this program. It takes the current
@@ -153,31 +82,26 @@
   list, it simply applies the rules of Conway's Game of Life to each relevant
   cell."
   [old-game-state]
-  (let [living-cells (get-list-live-cells old-game-state)]
-    (let [dead-cells (get-list-potentially-pregnant-cells
-        old-game-state living-cells)]
+  (let [dead-cells (get-list-potentially-pregnant-cells old-game-state)]
+      ; calculate which dead cells will stay dead and which will be born.
       (determine-next-game-state-dead old-game-state dead-cells
-        (determine-next-game-state-living old-game-state living-cells old-game-state)))))
-
+        ; calculate which cells will survive and which will die.
+        (determine-next-game-state-living old-game-state []))))
 
 (defn test-get-cell
   "Some test calls to get-cell and related functions to determine they operate
   as expected."
   []
   (let [game-state
-        {0 {0 "0, 0"
-            1 "1, 0"
-            2 "2, 0"},
-         1 {0 "0, 1"
-            1 "1, 1"
-            2 "2, 1"},
-         3 {-5 "-5, 3" 4 "4, 3"},
-         4 {-10 "-10, 4" 10 "10, 4"},
-         6 {4 "4, 6"},
-         7 {7 "7, 7"}}]
+        ['(0 0) '(1 0) '(2 0)
+         '(0 1) '(1 1) '(2 1)
+         '(-5 3) '(4 3)
+         '(-10 4) '(10 4)
+         '(4 6)
+         '(7 7)]]
     (println (str "Game state: " game-state))
     (println (str "nth game-state 3 " (get game-state 3)))
-    (println (str "nth game-state 4 3 " (get (get game-state 3) 4)))
+    (println (str "nth game-state 4 " (get 4)))
     (println (str "0, 0: " (get-cell game-state 0 0)))
     (println (str "-10, 4: " (get-cell game-state -10 4)))
     (println (str "4, 6: " (get-cell game-state 4 6)))
@@ -186,21 +110,16 @@
     (println (str "Get count of living neighbors of 1, 1: "
       (get-count-living-neighbors game-state 1 1)))))
 
-(defn get-all-sub-keys
-  "Given a map of maps, returns a list of all the inner-keys."
-  [game-state]
-  (apply concat (map #(keys %) (vals game-state))))
-
 (defn get-bounding-box
   "Given a game-state, returns a list containing the min-x, max-x, min-y, and
   max-y, in that order."
   [game-state]
-  (let [inner-keys (get-all-sub-keys game-state)
-        outer-keys (keys game-state)]
-    [(apply min inner-keys)
-     (apply max inner-keys)
-     (apply min outer-keys)
-     (apply max outer-keys)]))
+  (let [x-values (map (fn [[x y]] x) game-state)
+        y-values (map (fn [[x y]] y) game-state)]
+    [(apply min x-values)
+     (apply max x-values)
+     (apply min y-values)
+     (apply max y-values)]))
 
 (defn visualize-game-state
   "Displays an ASCII image of a given game-state."
@@ -221,14 +140,15 @@
           (if (> x max-x)
             subval
             (recur (inc x) (str subval
-              (if (is-dead? (get-in game-state [y x]))
+              (if (is-dead? (get-cell game-state x y))
                 "_"
                 "*")))))))))))
 
 (defn get-block-game-state
   "Returns the still-life pattern of a 2x2 block."
   []
-  {0 {0 true 1 true} 1 {0 true 1 true}})
+  ['(0 0) '(1 0)
+   '(0 1) '(1 1)])
 
 (defn get-beehive-game-state
   "Returns the still-life pattern of a beehive.
@@ -236,7 +156,9 @@
   *__*
   _**_"
   []
-  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 2 true}})
+  ['(1 0) '(2 0)
+   '(0 1) '(3 1)
+   '(1 2) '(2 2)])
 
 (defn get-loaf-game-state
   "Returns the still-life pattern of a loaf.
@@ -245,7 +167,10 @@
   _*_*
   __*_"
   []
-  {0 {1 true 2 true} 1 {0 true 3 true} 2 {1 true 3 true} 3 {2 true}})
+  ['(1 0) '(2 0)
+   '(0 1) '(3 1)
+   '(1 2) '(3 2)
+   '(2 3)])
 
 (defn get-boat-game-state
   "Returns the still-life pattern of a boat.
@@ -253,7 +178,9 @@
   *_*
   _*_"
   []
-  {0 {0 true 1 true} 1 {0 true 2 true} 2 {1 true}})
+  ['(0 0) '(1 0)
+   '(0 1) '(2 1)
+   '(1 2)])
 
 (defn get-tub-game-state
   "Returns the still-life pattern of a tub.
@@ -261,20 +188,25 @@
   *_*
   _*_"
   []
-  {0 {1 true} 1 {0 true 2 true} 2 {1 true}})
+  ['(1 0)
+   '(0 1) '(2 1)
+   '(1 2)])
 
 (defn get-blinker-game-state
   "Returns the oscillator pattern of a blinker, which is a 1x3 vertical line
   that switches betwen a 3x1 horizontal line, then repeats (period 2.)"
   []
-  {0 {1 true} 1 {1 true} 2 {1 true}})
+  ['(1 0)
+   '(1 1)
+   '(1 2)])
 
 (defn get-toad-game-state
   "Returns the oscillator pattern of a toad (period 2.)
   _***
   ***_"
   []
-  {0 {1 true 2 true 3 true} 1 {0 true 1 true 2 true}})
+  ['(1 0) '(2 0) '(3 0)
+   '(0 1) '(1 1) '(2 1)])
 
 (defn get-beacon-game-state
   "Returns the oscillator pattern of a beacon (period 2.)
@@ -283,7 +215,10 @@
   __**
   __**"
   []
-  {0 {0 true 1 true} 1 {0 true 1 true} 2 {2 true 3 true} 3 {2 true 3 true}})
+  ['(0 0) '(1 0)
+   '(0 1) '(1 1)
+   '(2 2) '(3 2)
+   '(2 3) '(3 3)])
 
 (defn get-pulsar-game-state
   "Returns the oscillator pattern of a pulsar (period 3.)
@@ -301,75 +236,73 @@
   *____*_*____*
   __***___***__"
   []
-  {0 {2 true 3 true 4 true 8 true 9 true 10 true}
-   2 {0 true 5 true 7 true 12 true}
-   3 {0 true 5 true 7 true 12 true}
-   4 {0 true 5 true 7 true 12 true}
-   5 {2 true 3 true 4 true 8 true 9 true 10 true}
-   7 {2 true 3 true 4 true 8 true 9 true 10 true}
-   8 {0 true 5 true 7 true 12 true}
-   9 {0 true 5 true 7 true 12 true}
-   10 {0 true 5 true 7 true 12 true}
-   12 {2 true 3 true 4 true 8 true 9 true 10 true}})
+  ['(2 0) '(3 0) '(4 0) '(8 0) '(9 0) '(10 0)
+   '(0 2) '(5 2) '(7 2) '(12 2)
+   '(0 3) '(5 3) '(7 3) '(12 3)
+   '(0 4) '(5 4) '(7 4) '(12 4)
+   '(2 5) '(3 5) '(4 5) '(8 5) '(9 5) '(10 5)
+   '(2 7) '(3 7) '(4 7) '(8 7) '(9 7) '(10 7)
+   '(0 8) '(5 8) '(7 8) '(12 8)
+   '(0 9) '(5 9) '(7 9) '(12 9)
+   '(0 10) '(5 10) '(7 10) '(12 10)
+   '(2 12) '(3 12) '(4 12) '(8 12) '(9 12) '(10 12)])
 
 (defn get-pentadecathlon-game-state
   "Returns the oscillator pattern of a penta-decathlon, which is a period 15
   oscillator."
   []
-  {0 {1 true 2 true 3 true}
-   1 {0 true 4 true}
-   2 {0 true 4 true}
-   3 {1 true 2 true 3 true}
-   8 {1 true 2 true 3 true}
-   9 {0 true 4 true}
-   10 {0 true 4 true}
-   11 {1 true 2 true 3 true}
-   })
+  ['(1 0) '(2 0) '(3 0)
+   '(0 1) '(4 1)
+   '(0 2) '(4 2)
+   '(1 3) '(2 3) '(3 3)
+   '(1 8) '(2 8) '(3 8)
+   '(0 9) '(4 9)
+   '(0 10) '(4 10)
+   '(1 11) '(2 11) '(3 11)])
 
 (defn get-glider-game-state
   "Returns the spaceship pattern of a glider, which is a pattern that moves
   across the universe while changing shape."
   []
-  {0 {1 true}
-   1 {2 true}
-   2 {0 true 1 true 2 true}})
+  ['(1 0) '(2 1)
+  '(0 2) '(1 2) '(2 2)])
 
 (defn get-light-weight-spaceship-game-state
   "Returns the pattern of a light-weight spaceship (LWSS)."
   []
-  {0 {2 true 3 true}
-   1 {0 true 1 true 3 true 4 true}
-   2 {0 true 1 true 2 true 3 true}
-   3 {1 true 2 true}})
+  ['(2 0) '(3 0)
+   '(0 1) '(1 1) '(3 1) '(4 1)
+   '(0 2) '(1 2) '(3 2) '(4 2)
+   '(1 3) '(2 3)])
 
 (defn get-middle-weight-spaceship-game-state
   "Returns the pattern of a middle-weight spaceship (MWSS)."
   []
-  {0 {3 true 4 true}
-   1 {0 true 1 true 2 true 4 true 5 true}
-   2 {0 true 1 true 2 true 3 true 4 true}
-   3 {1 true 2 true 3 true}})
+  ['(3 0) '(4 0)
+   '(0 1) '(1 1) '(2 1) '(4 1) '(5 1)
+   '(0 2) '(1 2) '(2 2) '(4 2) '(5 2)
+   '(1 3) '(2 3) '(3 3)])
 
 (defn get-heavy-weight-spaceship-game-state
   "Returns the pattern of a heavy-weight spaceship (HWSS)."
   []
-  {0 {4 true 5 true}
-   1 {0 true 1 true 2 true 3 true 5 true 6 true}
-   2 {0 true 1 true 2 true 3 true 4 true 5 true}
-   3 {1 true 2 true 3 true 4 true}})
+  ['(4 0) '(5 0)
+   '(0 1) '(1 1) '(2 1) '(3 1) '(5 1) '(6 1)
+   '(0 2) '(1 2) '(2 2) '(3 2) '(5 2) '(6 2)
+   '(1 3) '(2 3) '(3 3) '(4 3)])
 
 (defn get-gosper-glider-gun-game-state
   "Returns the first known glider gun, discovered by Bill Gosper in 1970."
   []
-  {0 {24 true}
-   1 {22 true 24 true}
-   2 {12 true 13 true 20 true 21 true 34 true 35 true}
-   3 {11 true 15 true 20 true 21 true 34 true 35 true}
-   4 {0 true 1 true 10 true 16 true 20 true 21 true}
-   5 {0 true 1 true 10 true 14 true 16 true 17 true 22 true 24 true}
-   6 {10 true 16 true 24 true}
-   7 {11 true 15 true}
-   8 {12 true 13 true}})
+  ['(24 0)
+   '(22 1) '(24 1)
+   '(12 2) '(13 2) '(20 2) '(21 2) '(34 2) '(35 2)
+   '(11 3) '(15 3) '(20 3) '(21 3) '(34 3) '(35 3)
+   '(0 4) '(1 4) '(10 4) '(16 4) '(20 4) '(21 4)
+   '(0 5) '(1 5) '(10 5) '(14 5) '(16 5) '(17 5) '(22 5) '(24 5)
+   '(10 6) '(16 6) '(24 6)
+   '(11 7) '(15 7)
+   '(12 8) '(13 8)])
 
 (defn visualize-pattern-and-next
   "This function prints the given game-state and the following one. It also
@@ -380,9 +313,8 @@
     (println "")
     (println (visualize-game-state game-state))
     (println (visualize-game-state next-game-state))
-    ; we return a cleaned-up version of the next state, to make debugging
-    ; easier.
-    (remove-dead-cells next-game-state))
+    ; we return the next state, to make debugging easier.
+    next-game-state)
   )
 
 (defn test-next-game-state
@@ -403,8 +335,77 @@
         (visualize-pattern-and-next (first patterns))
         (recur (rest patterns))))))
 
+(defn simulate-game-of-life
+  "This is the CLI presentation function for the simulation. Arguments are:
+  -initial=The starting game-state.
+  -max-ticks=The number of steps in the simulation to run through.
+  -tick-length-ms=As the name implies, the time in milliseconds for each step."
+  [initial max-ticks tick-length-ms]
+  (loop [tick 0 game-state initial]
+    ; thanks to Peter Monk for posting his 2012 code with the following two-line
+    ; snippet to clear the screen. Credit: https://codereview.stackexchange.com/questions/17603/critique-my-clojure-game-of-life-code
+    (print (str (char 27) "[2J"))  ; ANSI: clear screen
+    (print (str (char 27) "[;H"))  ; ANSI: move cursor to top left corner of screen
+    (println (visualize-game-state game-state -1 150 -1 50))
+    (Thread/sleep tick-length-ms)
+    (if (> tick max-ticks)
+      tick
+      (recur (inc tick)
+        (determine-next-game-state game-state)))))
+
+(defn encode-game-state
+  ""
+  [game-state]
+  (let [[min-x max-x min-y max-y] (get-bounding-box game-state)]
+    (str "x = " (+ (- max-x min-x) 1) ", y = "
+        (+ (- max-y min-y) 1) ", rule = B3/S23\n"
+    (loop [y min-y payload ""]
+      (if (> y max-y)
+        payload
+        (recur (inc y)
+          (str payload
+            (loop [x min-x sub_payload ""]
+              (if (> x max-x)
+                (str sub_payload "$")
+                (recur (inc x)
+                  (str sub_payload
+                    (if (get-cell game-state x y)
+                      "o"
+                      "b"))))))))))))
+
+(defn encode-consecutive-letters
+  ""
+  [s]
+  (loop [remaining s rle ""]
+    (if (< (count remaining) 2)
+      (str rle remaining)
+      (let [substring
+          (take-while #(= (str (first remaining)) (str %)) remaining)]
+        (recur
+            (clojure.string/join (drop (count substring) remaining))
+          (if (> (count substring) 1)
+            (str rle (count substring) (first substring))
+            (str rle substring)))))))
+
+(defn rle-encode-game-state
+  ""
+  [game-state]
+  (loop [lines (clojure.string/split (encode-game-state game-state) #"\$")
+         payload ""]
+    (if (empty? lines)
+      payload
+      (recur (rest lines) (str payload
+        (encode-consecutive-letters (first lines)))))))
+
+
+(defn save-game-state-as-golly-rle
+  ""
+  [game-state filename payload]
+  (spit filename payload)
+  )
+
 (defn -main
   "Run a simulation of Conway's Game of Life."
   [& args]
-  (test-next-game-state)
+  (simulate-game-of-life (get-glider-game-state) 100 500)
   )
